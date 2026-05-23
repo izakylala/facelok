@@ -1,0 +1,673 @@
+
+<!DOCTYPE html>
+<html lang="id">
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>DISINIKA Tallo - Digital Sistem Navigasi Kamera Tallo</title>
+		<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+		<link rel="icon" href="logo.png" type="image/png">
+		<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+		<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+		<style>
+			body {
+			font-family: 'Poppins', sans-serif;
+			background: linear-gradient(135deg, #0d0d0d 0%, #1a1a1a 100%);
+			color: #fff;
+			min-height: 100vh;
+			display: flex;
+			flex-direction: column;
+			}
+			.bg-image {
+			position: fixed;
+			top: 0; left: 0;
+			width: 100%; height: 100%;
+			z-index: -1;
+			background: url('bg-mks.jpg') center/cover no-repeat;
+			filter: brightness(0.6);
+			}
+			#captureBtn {
+			height: auto;
+			width: 100%;
+			font-size: 1.6rem;
+			border-width: 3px;
+			}
+			@media (max-width: 600px) {
+			#captureBtn {
+			width: auto;
+			margin-left: 5rem;
+			margin-right: 5rem;
+			padding: 20px;
+			height: 100%;
+			font-size: 1.4rem;
+			}
+			}
+			header {
+			position: fixed;
+			top: 0;
+			left: 0;
+			width: 100%;
+			padding: 5px 10px;
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			z-index: 1000;
+			background: rgba(113, 0, 0, 0.45);
+			backdrop-filter: blur(10px);
+			box-shadow: 0 0 10px rgba(255, 0, 0, 0.3);
+			}
+			header h4 {
+			display: flex;
+			align-items: center;
+			gap: 8px;
+			padding: 8px 16px;
+			font-size: 1rem;
+			font-weight: 600;
+			color: #fff;
+			border-radius: 0 0 15px 15px;
+			}
+			header img {
+			width: 40px;
+			height: auto;
+			}
+			@media (max-width: 768px) {
+			header h4 {
+			font-size: 0.85rem;
+			padding: 6px 12px;
+			}
+			header img {
+			width: 30px;
+			}
+			}
+			@media (max-width: 480px) {
+			header h4 {
+			font-size: 0.75rem;
+			flex-direction: column; /* biar text turun ke bawah di HP kecil */
+			text-align: center;
+			gap: 4px;
+			}
+			}
+			#video {
+			width: 100%;
+			max-width: 300px;
+			max-height: 80vh;   
+			aspect-ratio: 800 / 1422;
+			border-radius: 16px;
+			border: 3px solid rgba(255,255,255,0.2);
+			background: #000;
+			box-shadow: 0 0 20px rgba(0,0,0,0.6);
+			object-fit: cover;
+			}
+			#video.landscape {
+			max-width: 800px;
+			max-height: 80vh;   
+			aspect-ratio: 1422 / 800;
+			}
+			#canvas {
+			border-radius: 12px;
+			border: 2px solid #ddd;
+			}
+			.action-buttons {
+			background-color: rgba(113, 0, 0, 0.254);
+			}
+			.action-buttons .btn {
+			border: 3px solid;
+			border-radius: 12px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			font-size: 1.4rem;
+			height: 50px;
+			width: 100%;
+			}
+			.action-buttons .col-2 {
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			}
+			@media (max-width: 600px) {
+			.action-buttons button span {
+			display: none;
+			}
+			.action-buttons .btn {
+			height: 50px;
+			width: 50px;
+			font-size: 1.2rem;
+			padding: 0;
+			border-width: 3px;
+			border-radius: 50%;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			}
+			.action-buttons .bi, .action-buttons .fa-solid {
+			margin: 0;
+			}
+			}
+			.action-buttons button {
+			border: 2px solid;
+			border-radius: 12px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			font-size: 1.4rem;
+			height: 50px;
+			width: 100%;
+			transition: all 0.3s ease;
+			}
+			.action-buttons button:hover {
+			transform: translateY(-2px) scale(1.03);
+			box-shadow: 0 6px 18px rgba(0,0,0,0.3);
+			}
+			#qrcode { display: none; }
+			.zoom-control {
+			position: absolute;
+			top: 50%;
+			transform: translateY(-50%);
+			background: rgba(0,0,0,0.1);
+			padding: 10px;
+			border-radius: 12px;
+			z-index: 1000;
+			}
+			.vertical-range {
+			writing-mode: bt-lr; /* slider vertikal */
+			-webkit-appearance: slider-vertical;
+			width: 8px;
+			height: 150px;
+			}
+			/* Default: portrait → kiri */
+			.zoom-control {
+			left: 10px;
+			right: auto;
+			}
+			/* Landscape → kanan */
+			@media (orientation: landscape) {
+			.zoom-control {
+			left: auto;
+			right: 10px;
+			}
+			}
+		</style>
+	</head>
+	<body>
+		<div class="bg-image"></div>
+		<header>
+			<img src="logo-mks.png" alt="Logo Pemkot Makassar">
+			<h4>DI SINIKA Tallo<br><small>(Digital Sistem Navigasi Kamera Tallo)</small></h4>
+			<img src="logo-tallo.png" alt="Logo Kecamatan Tallo">
+		</header>
+		<main class="flex-grow-1 d-flex flex-column align-items-center justify-content-center text-center">
+			<video id="video" autoplay playsinline></video>
+			<!-- Zoom Control -->
+			<!-- Zoom Control -->
+			<div id="zoomControl" class="zoom-control d-flex flex-column align-items-center">
+				<button id="zoomInBtn" class="btn btn-outline-secondary mb-2">
+				<i class="fa fa-plus"></i>
+				</button>
+				<input type="range" id="zoomSlider" disabled
+					min="1" max="5" step="0.1" value="1"
+					class="form-range vertical-range">
+				<button id="zoomOutBtn" class="btn btn-outline-secondary">
+				<i class="fa fa-minus"></i>
+				</button>
+			</div>
+			<div class="action-buttons fixed-bottom py-2">
+				<div class="container-fluid">
+					<div class="row g-3 text-center justify-content-center">
+						<div class="col-2">
+							<button class="btn btn-outline-secondary btn-square" id="locationBtn">
+							<i class="fa-solid fa-location-crosshairs"></i>
+							<span>Lokasi</span>
+							</button>
+						</div>
+						<div class="col-2">
+							<button class="btn btn-outline-success btn-square" id="flipBtn">
+							<i class="fa-solid fa-camera-rotate"></i>
+							<span>Flip</span>
+							</button>
+						</div>
+						<div class="col-2 d-flex justify-content-center">
+							<button class="btn btn-outline-primary btn-square" id="captureBtn">
+							<i class="fa-solid fa-camera-retro"></i>
+							<span>Foto</span>
+							</button>
+						</div>
+						<div class="col-2">
+							<button class="btn btn-outline-danger btn-square" id="mirrorBtn">
+							<i class="bi bi-arrows"></i>
+							<span>Mirror</span>
+							</button>
+						</div>
+						<div class="col-2">
+							<button class="btn btn-outline-warning btn-square" id="orientationBtn">
+							<i class="fa-solid fa-mobile-screen-button"></i>
+							<span>Portrait</span>
+							</button>
+						</div>
+					</div>
+				</div>
+			</div>
+			<a hidden id="downloadLinkMain" class="btn btn-outline-secondary mt-3 d-none" download="foto-lokasi.png">
+			<i class="fa-solid fa-download"></i> Download Foto
+			</a>
+		</main>
+		<div id="qrcode"></div>
+		<div class="modal fade" id="photoModal" tabindex="-1" aria-hidden="true">
+			<div class="modal-dialog modal-dialog-centered">
+				<div class="modal-content bg-dark text-white">
+					<div class="modal-header border-0">
+						<h5 class="modal-title"><i class="bi bi-image"></i> Hasil Foto</h5>
+						<button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+					</div>
+					<div class="modal-body text-center">
+						<div class="mb-3">
+							<a id="downloadLinkModal" 
+								class="btn btn-primary">
+							<i class="fa-solid fa-download"></i> Download
+							</a>
+							<a id="shareWaBtn" 
+								class="btn btn-success ms-2">
+							<i class="fa-brands fa-whatsapp"></i> Bagikan
+							</a>
+						</div>
+						<canvas id="canvas" class="w-100"></canvas>
+					</div>
+					<div class="modal-footer border-0 justify-content-center">
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="modal fade" id="loadingModal" data-bs-backdrop="static" tabindex="-1" aria-hidden="true">
+			<div class="modal-dialog modal-dialog-centered">
+				<div class="modal-content bg-dark text-center text-white">
+					<div class="modal-body">
+						<div class="spinner-border text-primary mb-3" style="width: 3rem; height: 3rem;"></div>
+						<p>Mengambil lokasi, tungguki di'...</p>
+					</div>
+				</div>
+			</div>
+		</div>
+		<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+		<script>
+			const video = document.getElementById('video');
+			const canvas = document.getElementById('canvas');
+			const ctx = canvas.getContext('2d');
+			const qrContainer = document.getElementById('qrcode');
+			const locationBtn = document.getElementById('locationBtn');
+			const captureBtn = document.getElementById('captureBtn');
+			const flipBtn = document.getElementById('flipBtn');
+			const mirrorBtn = document.getElementById('mirrorBtn');
+			const orientationBtn = document.getElementById('orientationBtn');
+			const orientationIcon = orientationBtn.querySelector("i");
+			const orientationText = orientationBtn.querySelector("span");
+			const downloadLinkMain = document.getElementById('downloadLinkMain');
+			const downloadLinkModal = document.getElementById('downloadLinkModal');
+			let isLandscape = false;
+			let coords = "";
+			let facing = "environment";
+			let stream = null;
+			let currentAddress = "";
+			let isMirrored = false;
+			
+			const logoImg = new Image();
+			const logoImg2 = new Image();
+			logoImg.crossOrigin = "anonymous";
+			logoImg2.crossOrigin = "anonymous";
+			logoImg.src = "logo-tallo.png";
+			logoImg2.src = "logo-mks.png";
+			
+			function startCamera() {
+				if (stream) {
+					stream.getTracks().forEach(track => track.stop());
+				}
+				navigator.mediaDevices.getUserMedia({
+			video: {
+			 facingMode: facing,
+			 aspectRatio: isLandscape ? 16/9 : 9/16,
+			 width: { ideal: 1920 },  // biar tajam
+			 height: { ideal: 1080 }  // biar tajam
+			}
+			})
+			
+				.then(s => {
+					stream = s;
+					video.srcObject = s;
+					video.style.transform = isMirrored ? 'scaleX(-1)' : 'scaleX(1)';
+					video.classList.toggle('landscape', isLandscape);
+				})
+				.catch(err => {
+					console.error(err);
+					Swal.fire('Gagal', 'Kamera tidak bisa diakses. Pastikan perangkat mendukung resolusi yang diminta.', 'error');
+				});
+			}
+			
+			flipBtn.addEventListener('click', () => {
+				facing = (facing === 'environment') ? 'user' : 'environment';
+				startCamera();
+			});
+			
+			mirrorBtn.addEventListener('click', () => {
+				isMirrored = !isMirrored;
+				video.style.transform = isMirrored ? 'scaleX(-1)' : 'scaleX(1)';
+			});
+			
+			orientationBtn.addEventListener('click', () => {
+				isLandscape = !isLandscape;
+				orientationIcon.className = isLandscape ? "fa-solid fa-up-right-and-down-left-from-center" : "fa-solid fa-mobile-screen-button";
+				orientationText.textContent = isLandscape ? "Landscape" : "Portrait";
+				startCamera();
+			});
+			
+			captureBtn.addEventListener('click', () => {
+				if (!coords || !currentAddress) {
+					Swal.fire('Perhatian', 'Aktifkan lokasita dulu, tekan tombol kiri bawah', 'warning');
+					return;
+				}
+			
+				canvas.width = isLandscape ? 1422 : 800;
+				canvas.height = isLandscape ? 800 : 1422;
+			
+				ctx.fillStyle = "black";
+				ctx.fillRect(0, 0, canvas.width, canvas.height);
+			
+				const vw = video.videoWidth;
+				const vh = video.videoHeight;
+				const targetWidth = isLandscape ? 1422 : 800;
+				const targetHeight = isLandscape ? 800 : 1422;
+				const aspectRatio = vw / vh;
+				const canvasAspect = canvas.width / canvas.height;
+				let sx, sy, sw, sh, dx, dy, dw, dh;
+			
+				if (aspectRatio > canvasAspect) {
+					sw = vh * canvasAspect;
+					sh = vh;
+					sx = (vw - sw) / 2;
+					sy = 0;
+				} else {
+					sw = vw;
+					sh = vw / canvasAspect;
+					sx = 0;
+					sy = (vh - sh) / 2;
+				}
+				dw = canvas.width;
+				dh = canvas.height;
+				dx = 0;
+				dy = 0;
+			
+				if (isMirrored) {
+					ctx.save();
+					ctx.scale(-1, 1);
+					ctx.translate(-canvas.width, 0);
+					ctx.drawImage(video, sx, sy, sw, sh, 0, 0, dw, dh);
+					ctx.restore();
+				} else {
+					ctx.drawImage(video, sx, sy, sw, sh, 0, 0, dw, dh);
+				}
+			
+				const now = new Date();
+				const hariTanggal = new Intl.DateTimeFormat('id-ID', {
+					weekday: 'long', day: '2-digit', month: 'long', year: 'numeric'
+				}).format(now);
+				const jam = now.toLocaleTimeString('id-ID', {
+					hour: '2-digit', minute: '2-digit', second: '2-digit'
+				}) + ' WITA';
+			
+				// ========== STEP 1: Frame kamera sudah ada di sini (jangan diubah) ==========
+			
+			// ========== STEP 2: Background bawah ==========
+			const bgHeight = isLandscape ? 140 : 150;
+			ctx.fillStyle = "rgba(0,0,0,0.5)";
+			ctx.fillRect(0, canvas.height - bgHeight, canvas.width, bgHeight);
+			
+			// ========== STEP 3: Logo ==========
+			const logoSize = isLandscape ? 100 : 100;
+			
+			if (logoImg2.complete && logoImg2.naturalWidth !== 0) {
+			ctx.drawImage(logoImg2, 5, 10, logoSize, logoSize); // logo Makassar kiri atas
+			}
+			
+			if (logoImg.complete && logoImg.naturalWidth !== 0) {
+			ctx.drawImage(logoImg, logoSize, 10, logoSize, logoSize); // logo Tallo di sebelahnya
+			}
+			
+			// ========== STEP 4: QR Code ==========
+			const qrImg = qrContainer.querySelector('img');
+			if (qrImg && qrImg.complete) {
+			ctx.drawImage(qrImg, canvas.width - logoSize - 10, 10, logoSize, logoSize); // kanan atas
+			}
+			
+			// ========== STEP 5: Teks (Tanggal, Jam, Alamat) ==========
+			ctx.fillStyle = "white";
+			const fontSize = isLandscape ? 42 : 36;
+			ctx.font = `${fontSize}px Poppins`;
+			ctx.fillText(`${hariTanggal} | ${jam}`, 10, canvas.height - bgHeight + 50);
+			
+			ctx.font = `${fontSize * 0.65}px Poppins`;
+			wrapText(ctx, currentAddress, 10, canvas.height - bgHeight + 90, canvas.width - 20, 35);
+			
+			
+			
+				const dataUrl = canvas.toDataURL("image/png");
+				const dateTimeStr = getFormattedDateTime();
+				downloadLinkMain.href = dataUrl;
+				downloadLinkModal.href = dataUrl;
+				downloadLinkMain.classList.remove('d-none');
+				downloadLinkModal.setAttribute("download", `di-sinika-tallo-${dateTimeStr}.png`);
+				new bootstrap.Modal(document.getElementById('photoModal')).show();
+			});
+			
+			locationBtn.addEventListener('click', () => {
+				const loadingModal = new bootstrap.Modal(document.getElementById('loadingModal'));
+				loadingModal.show();
+			
+				if (navigator.geolocation) {
+					navigator.geolocation.getCurrentPosition(async pos => {
+						const lat = pos.coords.latitude.toFixed(6);
+						const lon = pos.coords.longitude.toFixed(6);
+						const accuracy = pos.coords.accuracy;
+						const timestamp = pos.timestamp;
+			
+						if (accuracy > 200) {
+							loadingModal.hide();
+							Swal.fire('Peringatan', 'Akurasi lokasi terlalu rendah. Pastikan GPS aktif dan berada di area dengan sinyal baik.', 'warning');
+							return;
+						}
+			
+						const now = Date.now();
+						if (now - timestamp > 30000) {
+							loadingModal.hide();
+							Swal.fire('Peringatan', 'Data lokasi tidak segar. Coba lagi dengan GPS aktif.', 'warning');
+							return;
+						}
+			
+						let ipData = null;
+						try {
+							const ipRes = await fetch("https://ipapi.co/json", { timeout: 5000 });
+							ipData = await ipRes.json();
+						} catch (e) {
+							console.warn("Gagal ambil lokasi IP, lanjutkan tanpa validasi IP");
+						}
+			
+						if (ipData && ipData.latitude && ipData.longitude) {
+							const ipLat = ipData.latitude;
+							const ipLon = ipData.longitude;
+							const jarak = getDistanceFromLatLonInKm(lat, lon, ipLat, ipLon);
+						}
+			
+						coords = `https://maps.google.com/?q=${lat},${lon}`;
+						qrContainer.innerHTML = "";
+						new QRCode(qrContainer, { text: coords, width: 300, height: 300 });
+			
+						fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}`)
+							.then(res => res.json())
+							.then(data => {
+								currentAddress = data.display_name || `${lat}, ${lon}`;
+								loadingModal.hide();
+								Swal.fire('Lokasi Aktif', currentAddress, 'success');
+							})
+							.catch(() => {
+								currentAddress = `${lat}, ${lon}`;
+								loadingModal.hide();
+								Swal.fire('Lokasi Aktif', currentAddress, 'info');
+							});
+					}, () => {
+						loadingModal.hide();
+						Swal.fire('Error', 'Tidak bisa ambil lokasi. Pastikan GPS aktif dan izin lokasi diberikan.', 'error');
+					}, { enableHighAccuracy: true, maximumAge: 0, timeout: 10000 });
+				} else {
+					loadingModal.hide();
+					Swal.fire('Oops', 'Browser tidak mendukung geolokasi', 'warning');
+				}
+			});
+			
+			function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
+				const R = 6371;
+				const dLat = deg2rad(lat2 - lat1);
+				const dLon = deg2rad(lon2 - lon1);
+				const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+					Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) *
+					Math.sin(dLon / 2) * Math.sin(dLon / 2);
+				const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+				return R * c;
+			}
+			
+			function deg2rad(deg) {
+				return deg * (Math.PI / 180);
+			}
+			
+			function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
+				const words = text.split(' ');
+				let line = '';
+				let lines = [];
+				for (let n = 0; n < words.length; n++) {
+					const testLine = line + words[n] + ' ';
+					const metrics = ctx.measureText(testLine);
+					if (metrics.width > maxWidth && n > 0) {
+						lines.push(line.trim());
+						line = words[n] + ' ';
+					} else {
+						line = testLine;
+					}
+				}
+				lines.push(line.trim());
+				lines.forEach((l, i) => {
+					ctx.fillText(l, x, y + (i * lineHeight));
+				});
+			}
+			
+			function getFormattedDateTime() {
+				const now = new Date();
+				const tgl = now.toISOString().split("T")[0];
+				const jam = now.toTimeString().split(" ")[0].replace(/:/g, "-");
+				return `${tgl}-${jam}`;
+			}
+			
+			startCamera();
+			document.getElementById("shareWaBtn").addEventListener("click", () => {
+			const dataUrl = canvas.toDataURL("image/png");
+			
+			// buat file blob supaya bisa dipakai di share API
+			fetch(dataUrl)
+			 .then(res => res.blob())
+			 .then(blob => {
+			   const file = new File([blob], "di-sinika-tallo.png", { type: "image/png" });
+			
+			if (navigator.canShare && navigator.canShare({ files: [file] })) {
+			// Kalau browser support Web Share API
+			navigator.share({
+			 files: [file],
+			 title: "Dokumentasi",
+			 text: "Dokumentasi dari *di sinika Tallo* 📸\n\n👉 tallokec.makassarkota.go.id/di-sinika/"
+			}).catch(err => console.log("Batal share:", err));
+			} else {
+			// Fallback: share lewat link WA (tanpa gambar, hanya link + data)
+			const waUrl = "https://wa.me/?text=" + encodeURIComponent(
+			 "Foto dokumentasi sudah siap 📸\n\n" +
+			 "👉 tallokec.makassarkota.go.id/di-sinika/\n\n" +
+			 "Buka di sini: " + dataUrl
+			);
+			window.open(waUrl, "_blank");
+			}
+			
+			 });
+			});
+			
+			const zoomSlider = document.getElementById("zoomSlider");
+			const zoomInBtn = document.getElementById("zoomInBtn");
+			const zoomOutBtn = document.getElementById("zoomOutBtn");
+			
+			let videoTrack = null;
+			
+			function startCamera() {
+			if (stream) {
+			 stream.getTracks().forEach(track => track.stop());
+			}
+			navigator.mediaDevices.getUserMedia({
+			 video: {
+			   facingMode: facing,
+			   aspectRatio: isLandscape ? 16/9 : 9/16,
+			   width: { ideal: 1920 },
+			   height: { ideal: 1080 }
+			 }
+			})
+			.then(s => {
+			 stream = s;
+			 video.srcObject = s;
+			 video.style.transform = isMirrored ? 'scaleX(-1)' : 'scaleX(1)';
+			 video.classList.toggle('landscape', isLandscape);
+			
+			 // simpan track video
+			 videoTrack = stream.getVideoTracks()[0];
+			
+			 // cek apakah kamera support zoom
+			 const capabilities = videoTrack.getCapabilities();
+			 if (capabilities.zoom) {
+			   zoomSlider.min = capabilities.zoom.min || 1;
+			   zoomSlider.max = capabilities.zoom.max || 5;
+			   zoomSlider.step = capabilities.zoom.step || 0.1;
+			   zoomSlider.value = videoTrack.getSettings().zoom || 1;
+			   zoomSlider.style.display = "block";
+			   zoomInBtn.style.display = "inline-block";
+			   zoomOutBtn.style.display = "inline-block";
+			 } else {
+			   zoomSlider.style.display = "none";
+			   zoomInBtn.style.display = "none";
+			   zoomOutBtn.style.display = "none";
+			 }
+			})
+			.catch(err => {
+			 console.error(err);
+			 Swal.fire('Gagal', 'Kamera tidak bisa diakses.', 'error');
+			});
+			}
+			
+			// fungsi apply zoom
+			function applyZoom(value) {
+			if (videoTrack) {
+			 videoTrack.applyConstraints({
+			   advanced: [{ zoom: value }]
+			 }).catch(err => console.warn("Zoom gagal:", err));
+			}
+			}
+			
+			// event tombol zoom in
+			zoomInBtn.addEventListener("click", () => {
+			let newZoom = Math.min((parseFloat(zoomSlider.value) || 1) + 0.2, parseFloat(zoomSlider.max || 5));
+			applyZoom(newZoom);
+			zoomSlider.value = newZoom.toFixed(1); // biar sync indikator kalau slider dipakai
+			});
+			
+			// event tombol zoom out
+			zoomOutBtn.addEventListener("click", () => {
+			let newZoom = Math.max((parseFloat(zoomSlider.value) || 1) - 0.2, parseFloat(zoomSlider.min || 1));
+			applyZoom(newZoom);
+			zoomSlider.value = newZoom.toFixed(1);
+			});
+			
+			
+		</script>
+	</body>
+</html>
