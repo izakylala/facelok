@@ -580,13 +580,12 @@
 			navigator.share({
 			 files: [file],
 			 title: "Dokumentasi",
-			 text: "Dokumentasi dari *Facelok DKP* lho 📸\n\n👉 link web"
+			 text: "Dokumentasi dari *Facelok DKP* lho 📸"
 			}).catch(err => console.log("Batal share:", err));
 			} else {
 			// Fallback: share lewat link WA (tanpa gambar, hanya link + data)
 			const waUrl = "https://wa.me/?text=" + encodeURIComponent(
 			 "Foto dokumentasi sudah siap 📸\n\n" +
-			 "👉 nama web\n\n" +
 			 "Buka di sini: " + dataUrl
 			);
 			window.open(waUrl, "_blank");
